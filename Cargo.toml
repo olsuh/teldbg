@@ -1,0 +1,20 @@
+[package]
+name = "teldbg"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+#tokio = { version = "1.21.2", features = [ "full" ] }
+tokio = "=0.2.0-alpha.4"
+telnet_codec = { git = "https://github.com/jtenner/telnet_codec" }
+
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
