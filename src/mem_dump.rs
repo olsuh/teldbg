@@ -58,41 +58,19 @@ where
     let sz = std::mem::size_of::<T>();
     let v = vec_mem::<T>(addr, len);
 
-    let ss = &v[..];
-
-    let mut s = String::new();
+    let mut res = String::new();
     let mut col_pos = 0;
     for i in 0..len {
         if col_pos >= len_row {
             col_pos = 0;
-            s += "\n";
+            res += "\n";
         }
         let byte = format!("{:#01$x}, ", v[i], sz*2+2);
 
-        //let char = v[i].try_into().unwrap();
-        let byte2 = format!("{:x}, ", v[i]);
-
-        //let c = format!("{:?}", v[i]);
-        //let c2 = format!("{:#?}", v[i]);
-        
         col_pos += 1;
-        s += &byte;
+        res += &byte;
     }
-
-    return s;
-
-    /*let p = m.as_ptr() as *const T;
-    (0..len).for_each(|x| unsafe {
-        let ss = format!(
-            "{:016x}: {:02$x}",
-            addr + sz * x,
-            std::ptr::read_volatile(p.offset(x as isize)),
-            sz * 2
-        );
-
-        s += &ss;
-    });
-    s*/
+    res
 }
 
 pub fn dump_mem_u8(addr: usize, len: usize, len_row: usize) -> String
