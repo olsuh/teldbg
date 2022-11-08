@@ -3,3 +3,5 @@
 /.git
 /.vscode
 Cargo.lock
+/old_src
+config.toml

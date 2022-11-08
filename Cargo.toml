@@ -7,10 +7,25 @@ edition = "2021"
 
 [dependencies]
 
-#tokio = { version = "1.21.2", features = [ "full" ] }
-tokio = "=0.2.0-alpha.4"
-telnet_codec = { git = "https://github.com/jtenner/telnet_codec" }
+tokio = { version = "1.21.2", features = [ "full" ] }
+#tokio = { version = "1", default-features = false, features = [
+#    "rt-multi-thread",
+#    "macros",
+#    "tracing",
+#] }
+tokio-util = { version = "0.7", default-features = false, features = ["codec"] }
+nectar = { git = "https://github.com/robertwayne/nectar", version = "0.1" }
+futures = { version = "0.3", features = ["thread-pool"] }
 
+serde = { version = "1", features = ["derive"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "tracing"] }
+tracing = "0.1"
+toml = "0.5"
+anyhow = "1.0.66"
+
+
+memmap = "0.7.0"
+memmapix = "0.6.3"
 
 [profile.release]
 strip = true
