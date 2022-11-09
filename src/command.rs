@@ -1,5 +1,6 @@
 use crate::{connection::Connection, mem_dump::main_dump};
 use anyhow::Result;
+use tracing_subscriber::fmt::format;
 use crate::mem_dump::parse_hex;
 
 
@@ -11,7 +12,8 @@ pub async fn command(msg: &mut str, conn: &mut Connection) -> Result<()> {
 
     let mut res = String::new();
 
-    if com == "mem" {
+    if words.len() < 2 {
+    } else if com == "mem" {
         if words[1] == "dump" { 
             let addr = parse_hex(&words[2]).expect("address parse error");
             let len: usize = if words.len() >= 4 {
@@ -40,7 +42,7 @@ pub async fn command(msg: &mut str, conn: &mut Connection) -> Result<()> {
                 cnt += 1;
                 
             }
-            res += &format!("writed {cnt} bytes to address {:#01$x}, ", addr, (usize::BITS/4) as usize);
+            res += &format!("writed {cnt} bytes to address {:#01$x}, ", addr, (usize::BITS/4+2) as usize);
         }
     } else if com == "s" {
 
@@ -73,43 +75,70 @@ pub async fn command(msg: &mut str, conn: &mut Connection) -> Result<()> {
 
     
         } else if words[1].starts_with("u") { //r u32 g_some_var
-            res += &loop {
-                let mut symbol = words[2];
-                let addr = match parse_hex(symbol) {
-                    Ok(addr) => {symbol = ""; addr as *const u8},
-                    Err(_) => dl_sym(symbol),
-                };
-                if addr.is_null() {
-                    break format!("Symbol not resolved - {} - {addr:?}", words[1])
-                }
-                let bites = match words[1]{
-                    "u8" =>  1,
-                    "u16" => 2,
-                    "u32" => 4,
-                    _ => usize::BITS as usize,
-                };
-    
-                let val = main_dump(bites, addr as usize, 1, 1);
-    
-                break format!("{symbol}({addr:?})={val}");
-            };
+            res += &cell_rw(&words);
             
         }
 
-    } else if com == "w" {
-        //write_mem::<u8>(addr, val);
+    } else if com == "w" { // w u32 g_some_var = 0x100500
+        res += &cell_rw(&words);
 
     }
 
     if res.is_empty() {
-        res = "bad command".to_owned();
+        res = format!("bad command - {msg}");
     }
 
     
     conn.send_message(&res).await
 }
 
+fn bites(sym_bits: &str) -> usize {
+    match sym_bits{
+        "u8" =>  1,
+        "u16" => 2,
+        "u32" => 4,
+        _ => (usize::BITS/8) as usize,
+    }
+}
 
+fn cell_rw(words: &Vec<&str>) -> String {
+    if words.len() < 3 {
+        return format!("");
+    }
+    let mut symbol = words[2];
+    let addr = match parse_hex(symbol) {
+        Ok(addr) => {symbol = ""; addr as *const u8},
+        Err(_) => dl_sym(symbol),
+    };
+    if addr.is_null() {
+        return format!("Symbol not resolved - {symbol} - {addr:?}");
+    }
+    
+    if words[0] == "r" {
+        let bites = bites(words[1]);
+        let val = main_dump(bites, addr as usize, 1, 1);
+        return format!("{symbol}({addr:?})={val}");
+    } else if words[0] == "w" {
+        let val = *words.last().unwrap();
+        let val = match parse_hex(val){
+            Ok(v) => v,
+            Err(e) => return format!("{e} - {val}"),
+        };
+        let addr = addr as usize;
+        match words[1] {
+            "u8"  => write_mem::<u8>(addr, val as u8),
+            "u16" => write_mem::<u16>(addr, val as u16),
+            "u32" => write_mem::<u32>(addr, val as u32),
+            "u64" if usize::BITS == 64 => 
+                     write_mem::<u64>(addr, val as u64),
+            u => return format!("Bit depth not resolved - {u}"),
+        }
+    
+        return format!("Writen: {symbol}({addr:?})={val}");
+    } else {
+        return format!("Bad command - {}", words[0]);
+    }
+}
 
 fn write_mem<T>(addr: usize, val: T) {
     let p = addr as *mut T;
@@ -141,7 +170,8 @@ extern {
     fn dlsym(handle: *const u8, symbol: *const u8) -> *const u8;
 }
 fn dl_sym(symbol: &str) -> *const u8 {
-    let symbol = symbol.as_ptr();
+    let symbol0 = format!("{symbol}\0");
+    let symbol = symbol0.as_ptr();
     //let libdl = unsafe { dlopen(b"libdl\0" as *const _, 2) };
     
     let foo: *const u8 = unsafe {
