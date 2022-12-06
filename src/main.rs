@@ -1,19 +1,19 @@
-mod connection;
-mod config;
-mod telnet;
 mod command;
+mod config;
+mod connection;
 mod mem_dump;
+mod parser;
+mod telnet;
 
-use telnet::telnet_connection_loop;
 use config::Config;
+use telnet::telnet_connection_loop;
 
+use anyhow::Result;
 use tokio::net::TcpListener;
 use tracing;
-use anyhow::Result;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-
     let config = Config::load().await?;
 
     let telnet_listener = TcpListener::bind(config.addr()).await?;

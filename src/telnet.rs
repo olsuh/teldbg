@@ -1,27 +1,24 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, os::unix::prelude::AsRawFd};
 
-use nectar::{event::TelnetEvent, TelnetCodec};
 use futures::StreamExt;
+use nectar::{event::TelnetEvent, TelnetCodec};
 use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
 
-use crate::{Result, connection::Connection, command::command};
+use crate::{command::command, connection::Connection, Result};
 
-pub async fn telnet_connection_loop(
-    stream: TcpStream,
-    addr: SocketAddr,
-) -> Result<()> {
+pub async fn telnet_connection_loop(stream: TcpStream, addr: SocketAddr) -> Result<()> {
     let frame = Framed::new(stream, TelnetCodec::new(1024));
-    let s = format!("\nHi, {:?}", &frame);
+    
+    let tcp = frame.get_ref();
+    let s = format!("teldbg: {}, peer: {}, fd: {}, {:?}\r\n>", tcp.local_addr().unwrap(), tcp.peer_addr().unwrap(), tcp.as_raw_fd(), frame.codec());
+    
     let mut conn = Connection::new(addr, frame);
 
-    //println!("{conn}");
-    
     conn.send_message(&s).await?;
-    conn.send_message("\nit's teldbg\n>").await?;
 
     // Display the logo.
-/*  let logo = tokio::fs::read_to_string("logo.txt").await;
+    /*  let logo = tokio::fs::read_to_string("logo.txt").await;
     if let Ok(logo) = logo {
         conn.send_message(&logo).await?;
     }*/
@@ -32,7 +29,6 @@ pub async fn telnet_connection_loop(
         tracing::info!("Authentication failed.");
         return Ok(());
     }*/
-
 
     loop {
         tokio::select! {

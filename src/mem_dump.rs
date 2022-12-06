@@ -1,7 +1,7 @@
 //extern crate memmap;
-use memmap::Mmap;
-use std::{fs::File, vec, str::Bytes, u8, ops::Add, string::ParseError, num::ParseIntError};
 use anyhow::Result;
+use memmap::Mmap;
+use std::{fs::File, num::ParseIntError, ops::Add, str::Bytes, string::ParseError, u8, vec};
 
 use core::ptr::read_volatile;
 
@@ -53,7 +53,7 @@ where
 
 fn dump_mem<T>(addr: usize, len: usize, len_row: usize) -> String
 where
-    T: std::fmt::LowerHex
+    T: std::fmt::LowerHex,
 {
     let sz = std::mem::size_of::<T>();
     let v = vec_mem::<T>(addr, len);
@@ -65,7 +65,7 @@ where
             col_pos = 0;
             res += "\n";
         }
-        let byte = format!("{:#01$x}, ", v[i], sz*2+2);
+        let byte = format!("{:#01$x}, ", v[i], sz * 2 + 2);
 
         col_pos += 1;
         res += &byte;
@@ -73,9 +73,7 @@ where
     res
 }
 
-pub fn dump_mem_u8(addr: usize, len: usize, len_row: usize) -> String
-
-{
+pub fn dump_mem_u8(addr: usize, len: usize, len_row: usize) -> String {
     let sz = 1;
     let v = u8_vec_mem(addr, len);
 
@@ -88,12 +86,12 @@ pub fn dump_mem_u8(addr: usize, len: usize, len_row: usize) -> String
             s += &format!(" // {s_char} \n");
             s_char.clear();
         }
-        let byte = format!("{:#01$x}, ", v[i], sz*2+2);
+        let byte = format!("{:#01$x}, ", v[i], sz * 2 + 2);
         s += &byte;
 
         let char = v[i] as char;
         s_char.push(char);
-        
+
         col_pos += 1;
     }
 
@@ -114,8 +112,6 @@ pub fn u8_vec_mem(addr: usize, len: usize) -> Vec<u8> {
     v
 }
 
-
-
 pub fn vec_mem<T>(addr: usize, len: usize) -> Vec<T>
 where
     T: std::fmt::LowerHex,
@@ -135,7 +131,6 @@ where
     }
     v
 }
-
 
 pub fn parse_hex(s: &str) -> Result<usize, ParseIntError> {
     if s.starts_with("0x") || s.starts_with("0X") {
@@ -168,7 +163,10 @@ fn main() {
         Ok(2) => dump_mem::<u16>(addr, len, 8),
         Ok(4) => dump_mem::<u32>(addr, len, 8),
         Ok(8) => dump_mem::<u64>(addr, len, 8),
-        _ => { print_usage(&args[0]); "".to_string() },
+        _ => {
+            print_usage(&args[0]);
+            "".to_string()
+        }
     };
 }
 
@@ -178,6 +176,6 @@ pub fn main_dump(bytes: usize, addr: usize, len: usize, len_row: usize) -> Strin
         2 => dump_mem::<u16>(addr, len, len_row),
         4 => dump_mem::<u32>(addr, len, len_row),
         8 => dump_mem::<u64>(addr, len, len_row),
-        _ => { "".to_string() },
+        _ => "".to_string(),
     }
 }

@@ -1,8 +1,8 @@
 use std::net::SocketAddr;
 
-use anyhow::{bail};
-use nectar::{event::TelnetEvent, TelnetCodec};
+use anyhow::bail;
 use futures::{SinkExt, StreamExt};
+use nectar::{event::TelnetEvent, TelnetCodec};
 use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
 
@@ -36,7 +36,7 @@ impl Connection {
     }
 
     pub async fn frame_send(&mut self, command: TelnetEvent) -> Result<()> {
-        match self.frame.send(command).await{
+        match self.frame.send(command).await {
             Ok(x) => Ok(x),
             Err(e) => bail!(e.to_string()),
         }
